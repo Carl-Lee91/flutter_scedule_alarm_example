@@ -1,11 +1,21 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class LocalNotificationSource {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  Future<void> configureLocalTimeZone() async {
+    tz.initializeTimeZones();
+    final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
+    final String timeZone = timeZoneInfo.identifier;
+    tz.setLocalLocation(tz.getLocation(timeZone));
+  }
+
   Future<void> initialize() async {
+    await configureLocalTimeZone();
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -42,7 +52,6 @@ class LocalNotificationSource {
   }
 
   Future<void> scheduleNotifications() async {
-    // Cancel existing notifications to avoid duplicates if button is clicked multiple times
     await _flutterLocalNotificationsPlugin.cancelAll();
 
     final now = tz.TZDateTime.now(tz.local);
