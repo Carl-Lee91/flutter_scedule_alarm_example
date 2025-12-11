@@ -11,14 +11,11 @@ import 'features/schedule_alarm/presentation/view/alarm_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Timezone
-  tz.initializeTimeZones();
-
-  // Initialize Local Notifications
   final localNotificationSource = LocalNotificationSource();
   await localNotificationSource.initialize();
 
-  // Dependency Injection
+  tz.initializeTimeZones();
+
   final notificationRepository = NotificationRepositoryImpl(
     localNotificationSource,
   );
