@@ -54,29 +54,74 @@ class LocalNotificationSource {
   Future<void> scheduleNotifications() async {
     await _flutterLocalNotificationsPlugin.cancelAll();
 
-    final now = tz.TZDateTime.now(tz.local);
+    // Schedule for this coming Saturday at 10:00 AM
+    await scheduleWeeklyNotification(
+      id: 1,
+      title: 'Happy Saturday!',
+      body: 'It is Saturday, time to relax!',
+      weekday: DateTime.saturday,
+      hour: 10,
+      minute: 0,
+    );
 
-    for (int i = 0; i < 7; i++) {
-      final scheduledDate = now.add(Duration(minutes: i + 1));
+    // Schedule for this coming Sunday at 10:00 AM
+    await scheduleWeeklyNotification(
+      id: 2,
+      title: 'Happy Sunday!',
+      body: 'It is Sunday, get ready for the week!',
+      weekday: DateTime.sunday,
+      hour: 10,
+      minute: 0,
+    );
+  }
 
-      await _flutterLocalNotificationsPlugin.zonedSchedule(
-        i,
-        'Scheduled Notification ${i + 1}',
-        'This is notification number ${i + 1}',
-        scheduledDate,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'scheduled_channel_id',
-            'Scheduled Notifications',
-            channelDescription: 'Channel for scheduled notifications',
-            importance: Importance.max,
-            priority: Priority.high,
-          ),
-          iOS: DarwinNotificationDetails(),
+  Future<void> scheduleWeeklyNotification({
+    required int id,
+    required String title,
+    required String body,
+    required int weekday,
+    required int hour,
+    required int minute,
+  }) async {
+    await _flutterLocalNotificationsPlugin.zonedSchedule(
+      id,
+      title,
+      body,
+      _nextInstanceOf(weekday, hour, minute),
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'weekly_channel_id',
+          'Weekly Notifications',
+          channelDescription: 'Channel for weekly notifications',
+          importance: Importance.max,
+          priority: Priority.high,
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      );
+        iOS: DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+    );
+  }
+
+  tz.TZDateTime _nextInstanceOf(int weekday, int hour, int minute) {
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    tz.TZDateTime scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+
+    while (scheduledDate.weekday != weekday) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
+
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 7));
+    }
+    return scheduledDate;
   }
 
   Future<void> cancelAll() async {
